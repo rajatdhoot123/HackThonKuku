@@ -6,14 +6,15 @@ import "../firebase";
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
-  useEffect(() => {
-    if (router.asPath !== "/") {
-      router.push("/");
-    }
-  }, [router.asPath]);
+  // useEffect(() => {
+  //   console.log(router);
+  //   if (router.asPath !== "/") {
+  //     router.push("/");
+  //   }
+  // }, [router.asPath]);
   return (
     <UserProvider>
-      <Component {...pageProps} />;
+      <Component {...pageProps} />
     </UserProvider>
   );
 }

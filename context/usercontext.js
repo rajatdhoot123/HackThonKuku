@@ -30,7 +30,7 @@ const UserProvider = ({ children = null }) => {
     return firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
         const token = await user.getIdToken();
-        cookie.set(FIREBASE_TOKEN, token, { expires: 14 });
+        cookie.set(FIREBASE_TOKEN, `Bearer ${token}`, { expires: 14 });
         sessionStorage.setItem(FIREBASE_TOKEN, token);
         const { name, email, photoUrl, uid, emailVerified, phoneNumber } = user;
         setUser({
