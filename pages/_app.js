@@ -1,7 +1,21 @@
-import 'tailwindcss/tailwind.css'
+import "tailwindcss/tailwind.css";
+import { useEffect } from "react";
+import { UserProvider } from "../context/usercontext";
+import { useRouter } from "next/router";
+import "../firebase";
 
 function MyApp({ Component, pageProps }) {
-  return <Component {...pageProps} />
+  const router = useRouter();
+  useEffect(() => {
+    if (router.asPath !== "/") {
+      router.push("/");
+    }
+  }, [router.asPath]);
+  return (
+    <UserProvider>
+      <Component {...pageProps} />;
+    </UserProvider>
+  );
 }
 
-export default MyApp
+export default MyApp;
