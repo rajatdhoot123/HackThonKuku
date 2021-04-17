@@ -1,17 +1,20 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import get from "lodash/get";
 import { useAppType } from "../store";
 import axios from "axios";
 import { secondsToHms } from "../utils/helper";
 import { useUser } from "../context/usercontext";
 import firebase from "../firebase";
 
-const ShowApps = ({ selectTab, tab }) => (
+const ShowApps = ({ selectTab, tab, hideHeader }) => (
   <>
-    <h1 className="font-semibold text-2xl my-5 w-3/4">
-      Set productive and unproductive app
-    </h1>
+    {!(hideHeader === "true") && (
+      <h1 className="font-semibold text-2xl my-5 w-3/4">
+        Set productive and unproductive app
+      </h1>
+    )}
     <div className="flex justify-between items-center">
       <button
         onClick={() => {
@@ -48,7 +51,6 @@ const AppsSelections = ({ data = [], phone }) => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log(data)
     updateAppType(data[0].apps, phone);
   }, [data, phone]);
 
@@ -56,7 +58,11 @@ const AppsSelections = ({ data = [], phone }) => {
     <div className="p-5">
       {!editVisible ? (
         <>
-          <ShowApps tab={tab} selectTab={selectTab} />
+          <ShowApps
+            hideHeader={get(router, "query.hide_header", false)}
+            tab={tab}
+            selectTab={selectTab}
+          />
           <div className="my-5">
             {(tab === "productive" ? productive : nonProductive).map((app) => (
               <div key={app.id} className="flex items-center py-2">

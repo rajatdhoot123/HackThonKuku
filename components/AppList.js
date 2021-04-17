@@ -13,10 +13,9 @@ const AppList = ({ apps = [], tab, updateAppType, router, phone }) => {
         "https://api.ratrey.co/api/v1.0/parssal/mark-apps/",
         {
           apps: localApps,
-          phone,
+          phone: `+91${phone}`,
         }
       );
-      console.log(data);
       updateAppType(data.apps);
       router.back();
     } catch (e) {
