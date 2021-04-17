@@ -1,16 +1,35 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { PieChart } from "react-minimal-pie-chart";
+import { useAppType } from "../store";
+import { secondsToHms } from "../utils/helper";
 
 const Home = ({ devices }) => {
   const router = useRouter();
+
+  const { updateAppType, productive, nonProductive, nonMark } = useAppType();
+
+  const productiveTime = productive.reduce((acc, current) => {
+    return acc + current.usage;
+  }, 0);
+  const nonProductiveTime = nonProductive.reduce((acc, current) => {
+    return acc + current.usage;
+  }, 0);
+  const otherTime = nonMark.reduce((acc, current) => {
+    return acc + current.usage;
+  }, 0);
+
+  useEffect(() => {
+    updateAppType(devices[0].apps, router.query.phone);
+  }, [devices, router.query.phone]);
 
   return (
     <div className="p-5">
       <button
         onClick={() => {
           router.push(
-            `/?phone=${encodeURIComponent(`+91${router.query.phone}`)}`
+            `/?phone=${encodeURIComponent(`${router.query.phone}`)}`
           );
         }}
         className="border-yellow-400 border p-3 rounded-xl flex items-center w-full"
@@ -20,6 +39,52 @@ const Home = ({ devices }) => {
         </div>
         <p>Setup productivity apps</p>
       </button>
+      <div className="flex items-center my-5">
+        <div className="h-28">
+          <PieChart
+            data={[
+              { title: "One", value: productiveTime, color: "#6930C3" },
+              { title: "Two", value: nonProductiveTime, color: "#C11487" },
+              { title: "Three", value: otherTime, color: "#FF7630" },
+            ]}
+            lineWidth={30}
+            rounded
+          />
+        </div>
+        <div>
+          <div className="flex my-2">
+            <div
+              className="h-6 w-6 rounded-lg mr-2 flex-shrink-0"
+              style={{ backgroundColor: "#6930C3" }}
+            ></div>
+            <div>
+              <p>Productive</p>
+              <p>{secondsToHms(productiveTime) || 0}</p>
+            </div>
+          </div>
+          <div className="flex my-2 ">
+            <div
+              className="h-6 w-6 rounded-lg mr-2 flex-shrink-0"
+              style={{ backgroundColor: "#C11487" }}
+            ></div>
+            <div>
+              <p>Non Productive</p>
+              <p>{secondsToHms(nonProductiveTime) || 0}</p>
+            </div>
+          </div>
+          <div className="flex my-2">
+            <div
+              className="h-6 w-6 rounded-lg mr-2 flex-shrink-0"
+              style={{ backgroundColor: "#FF7630" }}
+            ></div>
+            <div>
+              <p>Other</p>
+              <p>{secondsToHms(otherTime) || 0}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <p className="my-5 font-bold text-2xl">Daily most used app</p>
         {[...devices[0].apps]

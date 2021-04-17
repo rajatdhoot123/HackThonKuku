@@ -48,8 +48,9 @@ const AppsSelections = ({ data = [], phone }) => {
   const router = useRouter();
 
   useEffect(() => {
+    console.log(data)
     updateAppType(data[0].apps, phone);
-  }, [data]);
+  }, [data, phone]);
 
   return (
     <div className="p-5">
