@@ -35,7 +35,7 @@ const ShowApps = ({ selectTab, tab }) => (
             : ""
         } text-center text-lg focus:outline-none w-1/2`}
       >
-        UnProductive
+        Unproductive
       </button>
     </div>
   </>
@@ -137,160 +137,7 @@ const DropDown = ({ options, onSelect, initalValue }) => {
   );
 };
 
-const AppTable = ({ apps, user, phone }) => {
-  const [data, setData] = useState(apps);
-  const [maximumProductive, setMaxProductive] = useState("");
-  const [activeFilter, setActiveFilter] = useState({
-    type: "",
-    direction: true,
-  });
-  useEffect(() => {
-    setData(apps);
-  }, [apps]);
-
-  useEffect(() => {
-    if (activeFilter.type) {
-      handleFilter(activeFilter.type, activeFilter.direction);
-    }
-  }, [activeFilter]);
-
-  const handleFilter = (type, dir) => {
-    setData(() => [
-      ...data.sort((a, b) => (dir ? a[type] - b[type] : b[type] - a[type])),
-    ]);
-  };
-
-  const updateProductiveHours = async (e) => {
-    if (e.target.value) {
-      try {
-        const { data } = await axios.post(
-          "https://api.ratrey.co/v1.0/parssal/mark-apps-non-productive/",
-          {
-            non_productive_usage: e.target.value,
-            phone,
-          }
-        );
-        console.log({ data });
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  };
-  return (
-    <div className="border-red-500 border m-2 p-2 rounded-lg bg-red-100">
-      <div className="text-center text-lg font-semibold flex justify-between">
-        <div>{user.fullname}</div>
-        <div>
-          <div>Allow Non Productive Hours</div>
-          <div>
-            <input
-              onBlur={updateProductiveHours}
-              onChange={(e) => setMaxProductive(e.target.value)}
-              value={maximumProductive}
-            />
-          </div>
-        </div>
-      </div>
-      <table className="table-fixed">
-        <thead>
-          <tr>
-            <th
-              onClick={() => {
-                setActiveFilter({
-                  type: "title",
-                  direction: !activeFilter.direction,
-                });
-              }}
-              className="w-1/2 text-left"
-            >
-              App Name
-            </th>
-            {/* <th
-              onClick={() => {
-                setActiveFilter({
-                  type: "usage",
-                  direction: !activeFilter.direction,
-                });
-              }}
-              className="w-1/4 text-left"
-            >
-              Usage
-            </th> */}
-            <th className="w-1/4 text-center">Productive/Non Productive</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(({ title, usage, id }) => (
-            <tr key={id}>
-              <td>{title}</td>
-              {/* <td>{secondsToHms(usage)}</td> */}
-              <td className="text-center">
-                <DropDown
-                  initalValue=""
-                  onSelect={async (e) => {
-                    if (e !== "") {
-                      try {
-                        const { data } = await axios.post(
-                          "https://api.ratrey.co/v1.0/parssal/mark-apps-non-productive/",
-                          {
-                            non_productive_usage: e,
-                            phone,
-                          }
-                        );
-                        console.log({ data });
-                      } catch (e) {
-                        console.log(e);
-                      }
-                    }
-                  }}
-                  options={[
-                    { fullname: "Productive", id: 0 },
-                    { fullname: "Non Productive", id: 1 },
-                  ]}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const NotLogin = ({ onGmailLogin, user, logOut }) => {
-  return (
-    <div className="h-screen w-full flex  items-center justify-center">
-      {!user.uid ? (
-        <button
-          className="bg-red-400 text-white px-5 py-3 rounded-lg font-bold"
-          onClick={onGmailLogin}
-        >
-          Login
-        </button>
-      ) : (
-        <button
-          className="bg-red-400 text-white px-5 py-3 rounded-lg font-bold"
-          onClick={logOut}
-        >
-          Logout
-        </button>
-      )}
-    </div>
-  );
-};
-
 export default function Home({ error, devices, ...props }) {
-  // const { user = {}, setLogin, loginState, onGmailLogin, logOut } = useUser();
-
-  // if (user === null) {
-  //   return <div>Loading...</div>;
-  // }
-  // console.log(props, user, error);
-
-  // if (user.error || error.status_code === 401) {
-  //   return <NotLogin user={user} onGmailLogin={onGmailLogin} logOut={logOut} />;
-  // }
-
   const [activeProfile, setActiveProfile] = useState(1);
   const router = useRouter();
   const [number, setNumber] = useState();
@@ -334,40 +181,6 @@ export default function Home({ error, devices, ...props }) {
       data={devices.filter((device) => +device.user.id === +activeProfile)}
     />
   );
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <div className="flex items-center justify-center">
-        <h1 className="mx-2 font-semibold">Select Profile</h1>
-        <DropDown
-          initalValue={devices.map((device) => device.user)[0].id}
-          onSelect={(profile) => setActiveProfile(profile)}
-          options={devices.map((device) => device.user)}
-        />
-      </div>
-      <div className="grid w-full grid-cols-1 ">
-        {devices
-          .filter((device) => +device.user.id === +activeProfile)
-          .map((device) => (
-            <AppTable phone={phone} key={device.user.id} {...device} />
-          ))}
-      </div>
-      <footer className="flex items-center justify-center w-full h-24 border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
-        </a>
-      </footer>
-    </div>
-  );
 }
 
 export const getServerSideProps = async ({ query: { phone = "" } }) => {
@@ -376,8 +189,8 @@ export const getServerSideProps = async ({ query: { phone = "" } }) => {
     //   `https://api.ratrey.co/v1.0/parssal/me/`
     // );
     const { data } = await axios.get(
-      `https://api.ratrey.co/v1.0/parssal/app-list/?phone=${encodeURIComponent(
-        phone
+      `https://api.ratrey.co/api/v1.0/parssal/app-list/?phone=${encodeURIComponent(
+        "+91" + phone
       )}`
     );
 

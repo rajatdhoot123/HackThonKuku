@@ -10,7 +10,7 @@ const AppList = ({ apps = [], tab, updateAppType, router, phone }) => {
   const postData = async (localApps) => {
     try {
       const { data } = await axios.post(
-        "https://api.ratrey.co/v1.0/parssal/mark-apps/",
+        "https://api.ratrey.co/api/v1.0/parssal/mark-apps/",
         {
           apps: localApps,
           phone,
