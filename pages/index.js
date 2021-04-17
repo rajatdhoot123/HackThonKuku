@@ -1,16 +1,106 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useAppType } from "../store";
 import axios from "axios";
 import { secondsToHms } from "../utils/helper";
 import { useUser } from "../context/usercontext";
 import firebase from "../firebase";
 
-const DropDown = ({ options, selectedProfile }) => {
-  const [selected, setSelected] = useState(options[0].id);
+const ShowApps = ({ selectTab, tab }) => (
+  <>
+    <h1 className="font-semibold text-2xl my-5 w-3/4">
+      Set productive and unproductive app
+    </h1>
+    <div className="flex justify-between items-center">
+      <button
+        onClick={() => {
+          selectTab("productive");
+        }}
+        className={`${
+          tab === "productive"
+            ? "font-semibold text-theme bg-theme bg-opacity-10 py-3 px-5 rounded-3xl"
+            : ""
+        } text-center text-lg focus:outline-none w-1/2`}
+      >
+        Productive
+      </button>
+      <button
+        onClick={() => {
+          selectTab("unproductive");
+        }}
+        className={`${
+          tab === "unproductive"
+            ? "font-semibold text-theme bg-theme bg-opacity-10 py-3 px-5 rounded-3xl"
+            : ""
+        } text-center text-lg focus:outline-none w-1/2`}
+      >
+        UnProductive
+      </button>
+    </div>
+  </>
+);
+
+const AppsSelections = ({ data = [], phone }) => {
+  const [tab, selectTab] = useState("productive");
+  const [editVisible, setEditVisible] = useState(false);
+  const { updateAppType, productive, nonProductive, nonMark } = useAppType();
+  const router = useRouter();
 
   useEffect(() => {
-    selectedProfile(+selected);
+    updateAppType(data[0].apps, phone);
+  }, [data]);
+
+  return (
+    <div className="p-5">
+      {!editVisible ? (
+        <>
+          <ShowApps tab={tab} selectTab={selectTab} />
+          <div className="my-5">
+            {(tab === "productive" ? productive : nonProductive).map((app) => (
+              <div key={app.id} className="flex items-center py-2">
+                <div className="h-12 w-12 bg-gray-300 rounded-lg"></div>
+                <h1 className="ml-2">{app.title}</h1>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <AppList
+          updateAppType={updateAppType}
+          phone={phone}
+          setEditVisible={setEditVisible}
+          tab={tab}
+          apps={
+            tab === "productive"
+              ? [...productive, ...nonMark]
+              : [...nonProductive, ...nonMark]
+          }
+        />
+      )}
+      {!editVisible ? (
+        <div className="w-full my-5">
+          <button
+            onClick={() => {
+              router.push({
+                pathname: `${tab}`,
+              });
+            }}
+            className="m-auto flex justify-center bg-blue-300 bg-opacity-50 px-5 py-3 text-blue-500 rounded-2xl"
+          >
+            Add / Edit
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const DropDown = ({ options, onSelect, initalValue }) => {
+  const [selected, setSelected] = useState(initalValue);
+
+  useEffect(() => {
+    onSelect(selected === "" ? "" : +selected);
   }, [selected]);
   return (
     <div className="relative inline-flex">
@@ -32,6 +122,11 @@ const DropDown = ({ options, selectedProfile }) => {
         }}
         className="border border-gray-300 rounded-full text-gray-600 h-10 pl-5 pr-10 bg-white hover:border-gray-400 focus:outline-none appearance-none"
       >
+        {initalValue === "" && (
+          <option key="No Option" value="" id="">
+            Select
+          </option>
+        )}
         {options.map(({ fullname, id }) => (
           <option key={id} value={id}>
             {fullname}
@@ -42,8 +137,9 @@ const DropDown = ({ options, selectedProfile }) => {
   );
 };
 
-const AppTable = ({ apps, user }) => {
+const AppTable = ({ apps, user, phone }) => {
   const [data, setData] = useState(apps);
+  const [maximumProductive, setMaxProductive] = useState("");
   const [activeFilter, setActiveFilter] = useState({
     type: "",
     direction: true,
@@ -63,11 +159,37 @@ const AppTable = ({ apps, user }) => {
       ...data.sort((a, b) => (dir ? a[type] - b[type] : b[type] - a[type])),
     ]);
   };
+
+  const updateProductiveHours = async (e) => {
+    if (e.target.value) {
+      try {
+        const { data } = await axios.post(
+          "https://api.ratrey.co/v1.0/parssal/mark-apps-non-productive/",
+          {
+            non_productive_usage: e.target.value,
+            phone,
+          }
+        );
+        console.log({ data });
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
   return (
     <div className="border-red-500 border m-2 p-2 rounded-lg bg-red-100">
-      <div className="text-center text-lg font-semibold flex justify-center">
-        <div>Profile &nbsp;</div>
+      <div className="text-center text-lg font-semibold flex justify-between">
         <div>{user.fullname}</div>
+        <div>
+          <div>Allow Non Productive Hours</div>
+          <div>
+            <input
+              onBlur={updateProductiveHours}
+              onChange={(e) => setMaxProductive(e.target.value)}
+              value={maximumProductive}
+            />
+          </div>
+        </div>
       </div>
       <table className="table-fixed">
         <thead>
@@ -83,7 +205,7 @@ const AppTable = ({ apps, user }) => {
             >
               App Name
             </th>
-            <th
+            {/* <th
               onClick={() => {
                 setActiveFilter({
                   type: "usage",
@@ -92,17 +214,41 @@ const AppTable = ({ apps, user }) => {
               }}
               className="w-1/4 text-left"
             >
-              Usage (min)
-            </th>
-            <th className="w-1/4 text-center">App Type</th>
+              Usage
+            </th> */}
+            <th className="w-1/4 text-center">Productive/Non Productive</th>
           </tr>
         </thead>
         <tbody>
-          {data.map(({ title, usage }) => (
-            <tr key={title}>
+          {data.map(({ title, usage, id }) => (
+            <tr key={id}>
               <td>{title}</td>
-              <td>{secondsToHms(usage)}</td>
-              <td className="text-center">858</td>
+              {/* <td>{secondsToHms(usage)}</td> */}
+              <td className="text-center">
+                <DropDown
+                  initalValue=""
+                  onSelect={async (e) => {
+                    if (e !== "") {
+                      try {
+                        const { data } = await axios.post(
+                          "https://api.ratrey.co/v1.0/parssal/mark-apps-non-productive/",
+                          {
+                            non_productive_usage: e,
+                            phone,
+                          }
+                        );
+                        console.log({ data });
+                      } catch (e) {
+                        console.log(e);
+                      }
+                    }
+                  }}
+                  options={[
+                    { fullname: "Productive", id: 0 },
+                    { fullname: "Non Productive", id: 1 },
+                  ]}
+                />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -145,7 +291,7 @@ export default function Home({ error, devices, ...props }) {
   //   return <NotLogin user={user} onGmailLogin={onGmailLogin} logOut={logOut} />;
   // }
 
-  const [activeProfile, setActiveProfile] = useState(null);
+  const [activeProfile, setActiveProfile] = useState(1);
   const router = useRouter();
   const [number, setNumber] = useState();
 
@@ -155,7 +301,8 @@ export default function Home({ error, devices, ...props }) {
     }
   }, [router.query]);
 
-  if (!router.query.phone) {
+  const phone = router.query.phone;
+  if (!phone) {
     return (
       <div className="h-screen flex justify-center items-center">
         <div className="w-1/4">
@@ -182,6 +329,13 @@ export default function Home({ error, devices, ...props }) {
   }
 
   return (
+    <AppsSelections
+      phone={phone}
+      data={devices.filter((device) => +device.user.id === +activeProfile)}
+    />
+  );
+
+  return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <Head>
         <title>Create Next App</title>
@@ -190,7 +344,8 @@ export default function Home({ error, devices, ...props }) {
       <div className="flex items-center justify-center">
         <h1 className="mx-2 font-semibold">Select Profile</h1>
         <DropDown
-          selectedProfile={(profile) => setActiveProfile(profile)}
+          initalValue={devices.map((device) => device.user)[0].id}
+          onSelect={(profile) => setActiveProfile(profile)}
           options={devices.map((device) => device.user)}
         />
       </div>
@@ -198,7 +353,7 @@ export default function Home({ error, devices, ...props }) {
         {devices
           .filter((device) => +device.user.id === +activeProfile)
           .map((device) => (
-            <AppTable key={device.id} {...device} />
+            <AppTable phone={phone} key={device.user.id} {...device} />
           ))}
       </div>
       <footer className="flex items-center justify-center w-full h-24 border-t">
