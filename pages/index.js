@@ -175,12 +175,7 @@ export default function Home({ error, devices, ...props }) {
     );
   }
 
-  return (
-    <AppsSelections
-      phone={phone}
-      data={devices.filter((device) => +device.user.id === +activeProfile)}
-    />
-  );
+  return <AppsSelections phone={phone} data={devices} />;
 }
 
 export const getServerSideProps = async ({ query: { phone = "" } }) => {
